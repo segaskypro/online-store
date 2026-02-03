@@ -44,10 +44,12 @@ class TestCategory:
 
         assert category.name == "Компьютерная периферия"
         assert category.description == "Устройства ввода"
-        assert len(category.products) == 2
-        # Проверяем, что в списке действительно объекты Product
-        assert isinstance(category.products[0], Product)
-        assert isinstance(category.products[1], Product)
+        # Теперь products - это геттер, возвращающий строку
+        products_output = category.products
+        assert isinstance(products_output, str)
+        # Проверяем, что оба товара есть в выводе
+        assert "Мышь" in products_output
+        assert "Клавиатура" in products_output
 
     def test_category_count(self):
         """Проверяем подсчёт количества категорий"""
@@ -60,6 +62,8 @@ class TestCategory:
 
         # Проверяем, что счётчик увеличился на 1
         assert Category.category_count == initial_count + 1
+        # Очищаем, чтобы не влиять на другие тесты
+        del category
 
     def test_product_count(self):
         """Проверяем подсчёт общего количества товаров"""
@@ -76,34 +80,166 @@ class TestCategory:
 
         # Проверяем, что счётчик увеличился на 3
         assert Category.product_count == initial_count + 3
+        # Очищаем
+        del category
 
     def test_empty_category(self):
         """Проверяем создание пустой категории (без товаров)"""
         category = Category("Пустая категория", "Нет товаров", [])
 
         assert category.name == "Пустая категория"
-        assert len(category.products) == 0
-        # Счётчик категорий должен увеличиться, а товаров - нет
-        # В tests/test_main.py добавь в конец:
-        def test_main_function():
-            """Тестируем основную функцию"""
-            from main import main
+        assert category.products == ""  # Пустая категория - пустая строка
+        # Очищаем
+        del category
 
-            # Можно проверить, что функция существует и вызывается
-            assert callable(main)
+    def test_private_products_attribute(self):
+        """Проверяем, что products - приватный атрибут"""
+        product = Product("Тест", "Тест", 100.0, 1)
+        category = Category("Тест", "Тест", [product])
 
-            # Или проверить вывод (более сложно)
-            import io
-            import sys
+        # Проверяем, что нельзя обратиться напрямую
+        # Должен быть атрибут __products, но не products
+        assert hasattr(category, '_Category__products')
+        # products - это геттер, а не атрибут
+        # Проверяем, что это property
+        assert isinstance(type(category).products, property)
 
-            # Сохраняем оригинальный stdout
-            old_stdout = sys.stdout
-            sys.stdout = buffer = io.StringIO()
+    def test_add_product_method(self):
+        """Проверяем метод add_product"""
+        product1 = Product("Товар 1", "Описание", 100.0, 2)
+        product2 = Product("Товар 2", "Описание", 200.0, 3)
 
-            try:
-                main()
-                output = buffer.getvalue()
-                assert "Категория: Смартфоны" in output
-                assert "Всего категорий: 1" in output
-            finally:
-                sys.stdout = old_stdout
+        category = Category("Категория", "Описание", [product1])
+        initial_count = Category.product_count
+
+        category.add_product(product2)
+
+        # Проверяем, что товар добавился в вывод
+        assert "Товар 2" in category.products
+        # Проверяем, что счетчик увеличился
+        assert Category.product_count == initial_count + 1
+
+    def test_products_getter_format(self):
+        """Проверяем формат вывода геттера products"""
+        product = Product("Тестовый товар", "Описание", 1234.5, 7)
+        category = Category("Категория", "Описание", [product])
+
+        output = category.products
+        # Проверяем формат: "Название, цена руб. Остаток: количество шт."
+        expected = "Тестовый товар, 1234.5 руб. Остаток: 7 шт.\n"
+        assert output == expected
+
+    def test_new_product_classmethod(self):
+        """Проверяем класс-метод new_product"""
+        product_data = {
+            'name': 'Новый товар',
+            'description': 'Описание нового товара',
+            'price': 999.99,
+            'quantity': 5
+        }
+
+        product = Product.new_product(product_data)
+
+        assert product.name == 'Новый товар'
+        assert product.description == 'Описание нового товара'
+        assert product.price == 999.99
+        assert product.quantity == 5
+        assert isinstance(product, Product)
+
+    def test_price_getter_setter(self):
+        """Проверяем геттер и сеттер для цены"""
+        product = Product("Тест", "Тест", 100.0, 1)
+
+        # Проверяем геттер
+        assert product.price == 100.0
+
+        # Проверяем корректную установку цены
+        product.price = 150.0
+        assert product.price == 150.0
+
+        # Проверяем, что цена приватная
+        assert hasattr(product, '_Product__price')
+
+    def test_price_validation(self):
+        """Проверяем валидацию цены в сеттере"""
+        product = Product("Тест", "Тест", 100.0, 1)
+
+        # Запоминаем исходную цену
+        original_price = product.price
+
+        # Пробуем установить нулевую цену
+        # Нужно проверить, что цена не изменилась
+        product.price = 0
+        assert product.price == original_price  # Цена не должна измениться
+
+        # Пробуем установить отрицательную цену
+        product.price = -50.0
+        assert product.price == original_price  # Цена не должна измениться
+
+
+def test_main_function():
+    """Тестируем основную функцию main()"""
+    from main import main
+    import io
+    import sys
+
+    # Проверяем, что функция существует
+    assert callable(main)
+
+    # Перехватываем вывод
+    old_stdout = sys.stdout
+    sys.stdout = buffer = io.StringIO()
+
+    try:
+        # Запускаем main()
+        main()
+        output = buffer.getvalue()
+
+        # Проверяем ключевые элементы вывода (не точные значения, а наличие)
+        assert "Категория: Смартфоны" in output
+        assert "Всего категорий:" in output  # Не проверяем точное число
+        assert "Всего товаров:" in output  # Не проверяем точное число
+        assert "Samsung Galaxy S23" in output
+        assert "iPhone 15" in output
+        assert "Xiaomi Redmi Note 13" in output
+        assert "Цена не должна быть нулевая или отрицательная" in output
+    finally:
+        sys.stdout = old_stdout
+
+def test_product_with_negative_price():
+    """Тестируем создание продукта с отрицательной ценой"""
+    import io
+    import sys
+
+    old_stdout = sys.stdout
+    sys.stdout = buffer = io.StringIO()
+
+    try:
+        # Пытаемся создать товар с отрицательной ценой
+        # Сообщение должно вывестись
+        product = Product("Тест", "Тест", -100.0, 1)
+        output = buffer.getvalue()
+        assert "Цена не должна быть нулевая или отрицательная" in output
+        # Цена должна быть 0.0 (значение по умолчанию)
+        assert product.price == 0.0
+    finally:
+        sys.stdout = old_stdout
+
+
+def test_product_with_zero_price():
+    """Тестируем создание продукта с нулевой ценой"""
+    import io
+    import sys
+
+    old_stdout = sys.stdout
+    sys.stdout = buffer = io.StringIO()
+
+    try:
+        # Пытаемся создать товар с нулевой ценой
+        product = Product("Тест", "Тест", 0.0, 1)
+        output = buffer.getvalue()
+        assert "Цена не должна быть нулевая или отрицательная" in output
+        # Цена должна быть 0.0 (значение по умолчанию)
+        assert product.price == 0.0
+    finally:
+        sys.stdout = old_stdout
