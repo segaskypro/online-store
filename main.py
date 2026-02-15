@@ -11,6 +11,15 @@ class Product:
         # Пробуем установить реальную цену через сеттер
         self.price = price  # Это вызовет @price.setter!
 
+    def __str__(self):
+        return f"{self.name}, {self.price} руб. Остаток: {self.quantity} шт."
+
+    def __add__(self, other):
+        """Сложение продуктов: возвращает сумму стоимости всех товаров на складе"""
+        if isinstance(other, Product):  # Проверяем, что other - тоже Product
+            return (self.price * self.quantity) + (other.price * other.quantity)
+        else:
+            raise TypeError("Можно складывать только объекты Product")
 
     @classmethod
     def new_product(cls, product_dict):
@@ -49,6 +58,12 @@ class Category:
         Category.category_count += 1
         Category.product_count += len(products)
 
+    def __str__(self):
+        total_quantity = 0
+        for product in self.__products:
+            total_quantity += product.quantity
+        return f"{self.name}, количество продуктов: {total_quantity} шт."
+
     def add_product(self, product):
         """Добавляет продукт в категорию"""
         self.__products.append(product)  # Добавляем в приватный список
@@ -57,10 +72,9 @@ class Category:
     @property
     def products(self):
         """Геттер для получения форматированного списка товаров"""
-        result = ""  # Начинаем с пустой строки
-        for product in self.__products:  # Проходим по приватному списку
-            # Форматируем каждый товар по шаблону
-            result += f"{product.name}, {product.price} руб. Остаток: {product.quantity} шт.\n"
+        result = ""
+        for product in self.__products:
+            result += str(product) + "\n"  # ИСПОЛЬЗУЕМ __str__ продукта
         return result
 
 
@@ -125,6 +139,47 @@ def main():
     print(f"Всего товаров: {Category.product_count}")
 
     print("\nИнформация о товарах:")
+    print(category.products)
+
+    print("\n=== Проверка магических методов __str__ ===")
+
+    # Проверяем __str__ для продукта
+    print("Товар через __str__:")
+    print(product1)
+    print(product2)
+    print(product3)
+
+    # Проверяем __str__ для категории
+    print("\nКатегория через __str__:")
+    print(category)
+
+    print("\n=== Проверка магического метода __add__ ===")
+
+    # Складываем два продукта
+    product_a = Product("Товар A", "Описание", 100, 10)
+    product_b = Product("Товар B", "Описание", 200, 2)
+
+    result = product_a + product_b
+    print(f"{product_a.name}: {product_a.price} × {product_a.quantity} = {product_a.price * product_a.quantity}")
+    print(f"{product_b.name}: {product_b.price} × {product_b.quantity} = {product_b.price * product_b.quantity}")
+    print(f"Сумма: {result} (должно быть 1400)")
+
+    # Проверяем с нашими реальными продуктами
+    print("\nСкладываем реальные товары из магазина:")
+    sum1 = product1 + product2
+    print(f"{product1.name}: {product1.price} × {product1.quantity} = {product1.price * product1.quantity}")
+    print(f"{product2.name}: {product2.price} × {product2.quantity} = {product2.price * product2.quantity}")
+    print(f"Сумма: {sum1}")
+
+    # Проверяем, что будет ошибка при сложении с числом
+    print("\nПопытка сложить продукт с числом (должна быть ошибка):")
+    try:
+        wrong = product1 + 100
+    except TypeError as e:
+        print(f"Ошибка: {e}")
+
+    # Проверяем, что старый products геттер работает так же
+    print("\nСтарый геттер products (для сравнения):")
     print(category.products)
 
     # Проверяем, что оба продукта созданы правильно

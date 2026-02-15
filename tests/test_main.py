@@ -1,6 +1,7 @@
 # tests/test_main.py
 import os
 import sys
+import pytest
 
 # Добавляем корневую директорию в путь Python
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -243,3 +244,206 @@ def test_product_with_zero_price():
         assert product.price == 0.0
     finally:
         sys.stdout = old_stdout
+
+
+# ========== НОВЫЕ ТЕСТЫ ДЛЯ ЗАДАНИЯ 2 ==========
+
+class TestProductStr:
+    """Тесты для магического метода __str__ класса Product"""
+
+    def test_product_str_format(self):
+        """Проверяем формат строки продукта"""
+        product = Product("Тестовый продукт", "Тестовое описание", 100.0, 10)
+        expected = "Тестовый продукт, 100.0 руб. Остаток: 10 шт."
+        assert str(product) == expected
+
+    def test_product_str_with_different_values(self):
+        """Проверяем строковое представление с другими значениями"""
+        product = Product("iPhone", "Смартфон", 80000.0, 3)
+        expected = "iPhone, 80000.0 руб. Остаток: 3 шт."
+        assert str(product) == expected
+
+    def test_product_str_zero_quantity(self):
+        """Проверяем продукт с нулевым количеством"""
+        product = Product("Пустой товар", "Нет в наличии", 100.0, 0)
+        expected = "Пустой товар, 100.0 руб. Остаток: 0 шт."
+        assert str(product) == expected
+
+    def test_product_str_float_price(self):
+        """Проверяем продукт с ценой в виде float"""
+        product = Product("Товар", "Описание", 99.99, 5)
+        expected = "Товар, 99.99 руб. Остаток: 5 шт."
+        assert str(product) == expected
+
+
+class TestCategoryStr:
+    """Тесты для магического метода __str__ класса Category"""
+
+    def test_category_str_format(self):
+        """Проверяем формат строки категории с несколькими товарами"""
+        product1 = Product("Товар 1", "Описание 1", 50.0, 5)
+        product2 = Product("Товар 2", "Описание 2", 150.0, 3)
+        product3 = Product("Товар 3", "Описание 3", 200.0, 10)
+        category = Category("Тестовая категория", "Описание", [product1, product2, product3])
+
+        # Сумма количеств: 5 + 3 + 10 = 18
+        expected = "Тестовая категория, количество продуктов: 18 шт."
+        assert str(category) == expected
+
+    def test_category_str_empty_products(self):
+        """Проверяем категорию без товаров"""
+        category = Category("Пустая категория", "Нет товаров", [])
+        expected = "Пустая категория, количество продуктов: 0 шт."
+        assert str(category) == expected
+
+    def test_category_str_single_product(self):
+        """Проверяем категорию с одним товаром"""
+        product = Product("Один товар", "Описание", 100.0, 7)
+        category = Category("Категория с одним товаром", "Описание", [product])
+        expected = "Категория с одним товаром, количество продуктов: 7 шт."
+        assert str(category) == expected
+
+    def test_category_str_large_quantities(self):
+        """Проверяем категорию с большими количествами"""
+        product1 = Product("Товар 1", "Описание", 100.0, 1000)
+        product2 = Product("Товар 2", "Описание", 200.0, 500)
+        category = Category("Крупная категория", "Описание", [product1, product2])
+
+        expected = "Крупная категория, количество продуктов: 1500 шт."
+        assert str(category) == expected
+
+
+class TestProductAdd:
+    """Тесты для магического метода __add__ класса Product"""
+
+    def test_product_add_two_products(self):
+        """Проверяем сложение двух продуктов"""
+        product1 = Product("Товар A", "Описание A", 100.0, 10)
+        product2 = Product("Товар B", "Описание B", 200.0, 2)
+
+        # Ожидаем: 100*10 + 200*2 = 1000 + 400 = 1400
+        expected = 1400.0
+        assert product1 + product2 == expected
+
+    def test_product_add_with_zero_quantity(self):
+        """Проверяем сложение с продуктом, у которого нет остатка"""
+        product1 = Product("Товар A", "Описание A", 100.0, 10)
+        product2 = Product("Товар B", "Описание B", 200.0, 0)
+
+        # Ожидаем: 100*10 + 200*0 = 1000 + 0 = 1000
+        expected = 1000.0
+        assert product1 + product2 == expected
+
+    def test_product_add_commutative(self):
+        """Проверяем, что сложение коммутативно (a + b = b + a)"""
+        product1 = Product("Товар A", "Описание A", 150.0, 4)
+        product2 = Product("Товар B", "Описание B", 300.0, 1)
+
+        assert product1 + product2 == product2 + product1
+
+    def test_product_add_with_self(self):
+        """Проверяем сложение продукта с самим собой"""
+        product = Product("Товар", "Описание", 200.0, 3)
+        # 200*3 + 200*3 = 600 + 600 = 1200
+        expected = 1200.0
+        assert product + product == expected
+
+    def test_product_add_multiple_times(self):
+        """Проверяем сложение трёх продуктов (сумма всех стоимостей)"""
+        product1 = Product("Товар 1", "Описание", 100.0, 2)  # 200
+        product2 = Product("Товар 2", "Описание", 200.0, 3)  # 600
+        product3 = Product("Товар 3", "Описание", 300.0, 1)  # 300
+
+        # Складываем два, потом прибавляем третий к результату
+        sum12 = product1 + product2  # 200 + 600 = 800
+        total = sum12 + (product3.price * product3.quantity)  # 800 + 300 = 1100
+
+        expected = 1100.0
+        assert total == expected
+
+        # Альтернативный способ: посчитать вручную
+        manual_total = (product1.price * product1.quantity) + \
+                       (product2.price * product2.quantity) + \
+                       (product3.price * product3.quantity)
+        assert manual_total == expected
+
+    def test_product_add_with_negative_price_product(self):
+        """Проверяем сложение с продуктом, у которого отрицательная цена (должна быть 0)"""
+        import io
+        import sys
+
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()  # Подавляем вывод сообщения об ошибке
+
+        try:
+            product1 = Product("Товар A", "Описание", 100.0, 5)
+            product2 = Product("Товар B", "Описание", -50.0, 2)  # Цена станет 0
+
+            # 100*5 + 0*2 = 500 + 0 = 500
+            expected = 500.0
+            assert product1 + product2 == expected
+        finally:
+            sys.stdout = old_stdout
+
+    def test_product_add_wrong_type(self):
+        """Проверяем, что при сложении с числом возникает ошибка"""
+        product = Product("Товар", "Описание", 100.0, 5)
+
+        with pytest.raises(TypeError) as exc_info:
+            result = product + 100
+        assert "Можно складывать только объекты Product" in str(exc_info.value)
+
+    def test_product_add_wrong_type_string(self):
+        """Проверяем, что при сложении со строкой возникает ошибка"""
+        product = Product("Товар", "Описание", 100.0, 5)
+
+        with pytest.raises(TypeError) as exc_info:
+            result = product + "строка"
+        assert "Можно складывать только объекты Product" in str(exc_info.value)
+
+    def test_product_add_wrong_type_none(self):
+        """Проверяем, что при сложении с None возникает ошибка"""
+        product = Product("Товар", "Описание", 100.0, 5)
+
+        with pytest.raises(TypeError) as exc_info:
+            result = product + None
+        assert "Можно складывать только объекты Product" in str(exc_info.value)
+
+
+class TestProductsGetterWithStr:
+    """Тесты для геттера products, который теперь использует __str__"""
+
+    def test_products_getter_uses_str_method(self):
+        """Проверяем, что геттер products использует __str__ продуктов"""
+        product = Product("Тестовый товар", "Описание", 1234.5, 7)
+        category = Category("Категория", "Описание", [product])
+
+        # Получаем вывод через геттер
+        output = category.products
+
+        # Проверяем, что вывод совпадает с str(product) + перевод строки
+        expected = str(product) + "\n"
+        assert output == expected
+
+    def test_products_getter_multiple_products(self):
+        """Проверяем геттер products с несколькими продуктами"""
+        product1 = Product("Товар 1", "Описание", 100.0, 2)
+        product2 = Product("Товар 2", "Описание", 200.0, 3)
+        category = Category("Категория", "Описание", [product1, product2])
+
+        output = category.products
+
+        # Ожидаем: str(product1) + "\n" + str(product2) + "\n"
+        expected = str(product1) + "\n" + str(product2) + "\n"
+        assert output == expected
+
+    def test_products_getter_with_added_product(self):
+        """Проверяем, что после add_product новый продукт правильно отображается"""
+        category = Category("Категория", "Описание", [])
+        product = Product("Новый товар", "Описание", 300.0, 4)
+
+        category.add_product(product)
+
+        # Проверяем, что новый продукт отображается через __str__
+        expected = str(product) + "\n"
+        assert category.products == expected
