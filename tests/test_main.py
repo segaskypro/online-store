@@ -197,8 +197,12 @@ def test_main_function():
         main()
         output = buffer.getvalue()
 
-        # Функция main теперь ничего не выводит, поэтому output должен быть пустым
-        assert output == ""
+        # Проверяем, что функция main выводит ожидаемые сообщения
+        assert "=== Начинаем тестирование миксина ===" in output
+        assert "Создание объекта Product" in output
+        assert "Создание объекта Smartphone" in output
+        assert "Создание объекта LawnGrass" in output
+        assert "=== Все продукты успешно созданы ===" in output
     finally:
         sys.stdout = old_stdout
 
@@ -1137,3 +1141,166 @@ class TestAdditionalCoverage:
             assert product.description == data['description']
             assert product.price == data['price']
             assert product.quantity == data['quantity']
+
+
+# ========== ТЕСТЫ ДЛЯ НОВОЙ ФУНКЦИОНАЛЬНОСТИ (АБСТРАКТНЫЙ КЛАСС И МИКСИН) ==========
+
+class TestBaseProduct:
+    """Тесты для абстрактного класса BaseProduct"""
+
+    def test_baseproduct_abstract_class(self):
+        """Проверяем, что BaseProduct - абстрактный класс и его нельзя инстанцировать"""
+        from main import BaseProduct
+
+        with pytest.raises(TypeError) as exc_info:
+            BaseProduct("Тест", "Описание", 100.0, 5)
+        assert "Can't instantiate abstract class" in str(exc_info.value)
+
+    def test_product_inherits_from_baseproduct(self):
+        """Проверяем, что Product наследуется от BaseProduct"""
+        from main import Product, BaseProduct
+
+        assert issubclass(Product, BaseProduct)
+        assert isinstance(Product("Тест", "Описание", 100.0, 5), BaseProduct)
+
+    def test_smartphone_inherits_from_baseproduct(self):
+        """Проверяем, что Smartphone наследуется от BaseProduct через Product"""
+        from main import Smartphone, BaseProduct
+
+        phone = Smartphone("Phone", "Desc", 1000.0, 2, "CPU", "M", 128, "Black")
+        assert isinstance(phone, BaseProduct)
+
+    def test_lawn_grass_inherits_from_baseproduct(self):
+        """Проверяем, что LawnGrass наследуется от BaseProduct через Product"""
+        from main import LawnGrass, BaseProduct
+
+        grass = LawnGrass("Grass", "Desc", 500.0, 10, "Russia", "7 days", "Green")
+        assert isinstance(grass, BaseProduct)
+
+
+class TestProductReprMixin:
+    """Тесты для миксина ProductReprMixin"""
+
+    def test_mixin_output_on_product_creation(self, capsys):
+        """Проверяем, что при создании Product выводится сообщение"""
+        from main import Product
+
+        Product("Тестовый товар", "Описание", 1000.0, 5)
+        captured = capsys.readouterr()
+
+        assert "Создание объекта Product с параметрами:" in captured.out
+        assert "Тестовый товар" in captured.out
+        assert "Описание" in captured.out
+        assert "1000.0" in captured.out
+        assert "5" in captured.out
+
+    def test_mixin_output_on_smartphone_creation(self, capsys):
+        """Проверяем, что при создании Smartphone выводится сообщение"""
+        from main import Smartphone
+
+        Smartphone("iPhone", "Смартфон", 80000.0, 3,
+                   "A16", "15 Pro", 256, "черный")
+        captured = capsys.readouterr()
+
+        assert "Создание объекта Smartphone с параметрами:" in captured.out
+        assert "iPhone" in captured.out
+        assert "Смартфон" in captured.out
+        assert "80000.0" in captured.out
+        assert "3" in captured.out
+
+    def test_mixin_output_on_lawn_grass_creation(self, capsys):
+        """Проверяем, что при создании LawnGrass выводится сообщение"""
+        from main import LawnGrass
+
+        LawnGrass("Газон", "Трава для газона", 2000.0, 10,
+                  "Россия", "7-10 дней", "зеленый")
+        captured = capsys.readouterr()
+
+        assert "Создание объекта LawnGrass с параметрами:" in captured.out
+        assert "Газон" in captured.out
+        assert "Трава для газона" in captured.out
+        assert "2000.0" in captured.out
+        assert "10" in captured.out
+
+    def test_mixin_inheritance_chain(self):
+        """Проверяем, что миксин правильно встроен в цепочку наследования"""
+        from main import Product, ProductReprMixin, BaseProduct
+
+        # Проверяем порядок наследования
+        assert ProductReprMixin in Product.__bases__
+        assert BaseProduct in Product.__bases__
+
+        # Проверяем, что методы миксина доступны
+        product = Product("Тест", "Описание", 100.0, 5)
+        assert hasattr(product, '__init__')
+
+    def test_multiple_creations_output(self, capsys):
+        """Проверяем вывод при создании нескольких объектов"""
+        from main import Product, Smartphone, LawnGrass
+
+        # Создаем несколько объектов
+        Product("Товар 1", "Описание 1", 100.0, 5)
+        Smartphone("Телефон 1", "Описание", 50000.0, 2, "CPU", "M", 128, "черный")
+        LawnGrass("Трава 1", "Описание", 1500.0, 20, "Россия", "7 дней", "зеленый")
+
+        captured = capsys.readouterr()
+        output_lines = captured.out.strip().split('\n')
+
+        # Должно быть 3 строки вывода
+        assert len(output_lines) == 3
+        assert "Создание объекта Product" in output_lines[0]
+        assert "Создание объекта Smartphone" in output_lines[1]
+        assert "Создание объекта LawnGrass" in output_lines[2]
+
+
+# ========== ТЕСТЫ ДЛЯ ПРОВЕРКИ ПОКРЫТИЯ ==========
+
+def test_coverage_requirement():
+    """Проверяем, что покрытие тестами > 75%"""
+    # Это вспомогательная функция, которая будет использовать pytest-cov
+    # Запускать нужно отдельно: pytest --cov=main tests/
+    pass
+
+
+class TestAdditionalCoverageForNewFeatures:
+    """Дополнительные тесты для новой функциональности"""
+
+    def test_baseproduct_has_abstract_methods(self):
+        """Проверяем, что BaseProduct имеет все необходимые абстрактные методы"""
+        from main import BaseProduct
+
+        # Получаем список абстрактных методов
+        abstract_methods = getattr(BaseProduct, '__abstractmethods__', [])
+
+        # Проверяем наличие обязательных методов
+        assert '__init__' in abstract_methods
+        assert '__str__' in abstract_methods
+        assert '__add__' in abstract_methods
+        assert 'price' in abstract_methods
+
+    def test_product_implements_all_abstract_methods(self):
+        """Проверяем, что Product реализует все абстрактные методы"""
+        from main import Product, BaseProduct
+
+        # Пытаемся создать экземпляр - не должно быть ошибки
+        product = Product("Тест", "Описание", 100.0, 5)
+
+        # Проверяем, что все методы работают
+        assert hasattr(product, '__init__')
+        assert hasattr(product, '__str__')
+        assert hasattr(product, '__add__')
+        assert hasattr(product, 'price')
+
+    def test_mixin_output_format(self, capsys):
+        """Проверяем формат вывода миксина"""
+        from main import Product
+
+        Product("Тестовый продукт", "Тестовое описание", 123.45, 7)
+        captured = capsys.readouterr()
+
+        # Проверяем формат: класс, параметры
+        assert captured.out.startswith("Создание объекта Product с параметрами:")
+        assert "Тестовый продукт" in captured.out
+        assert "Тестовое описание" in captured.out
+        assert "123.45" in captured.out
+        assert "7" in captured.out

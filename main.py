@@ -1,35 +1,62 @@
 # main.py
+from abc import ABC, abstractmethod
 
-class Product:
+
+class ProductReprMixin:
+    """Миксин для вывода информации о создании объекта"""
+
+    def __init__(self, *args, **kwargs):
+        print(f"Создание объекта {self.__class__.__name__} с параметрами: {args}, {kwargs}")
+        super().__init__(*args, **kwargs)
+
+
+class BaseProduct(ABC):
+    """Абстрактный базовый класс для всех продуктов"""
+
+    @abstractmethod
+    def __init__(self, name: str, description: str, price: float, quantity: int):
+        """Конструктор, который должен быть у каждого продукта"""
+        pass
+
+    @abstractmethod
+    def __str__(self):
+        """Строковое представление, которое должно быть у каждого продукта"""
+        pass
+
+    @abstractmethod
+    def __add__(self, other):
+        """Сложение продуктов, которое должно быть у каждого продукта"""
+        pass
+
+    @property
+    @abstractmethod
+    def price(self):
+        """Геттер цены, который должен быть у каждого продукта"""
+        pass
+
+
+class Product(ProductReprMixin, BaseProduct):
     def __init__(self, name: str, description: str,
                  price: float, quantity: int):
+        super().__init__(name, description, price, quantity)
         self.name = name
         self.description = description
         self.quantity = quantity
-        # Устанавливаем начальное значение
         self.__price = 0.0
-        # Пробуем установить реальную цену через сеттер
-        self.price = price  # Это вызовет @price.setter!
+        self.price = price
 
     def __str__(self):
         return f"{self.name}, {self.price} руб. Остаток: {self.quantity} шт."
 
     def __add__(self, other):
-        """Сложение продуктов: возвращает сумму стоимости всех товаров на складе"""
-        # Проверяем, что other - тоже Product
         if not isinstance(other, Product):
             raise TypeError("Можно складывать только объекты Product")
-
-        # Проверяем, что классы одинаковые (используем type())
         if type(self) is not type(other):
             raise TypeError("Нельзя складывать товары разных классов")
-
-        # Если все проверки пройдены - складываем
         return (self.price * self.quantity) + (other.price * other.quantity)
 
     @classmethod
     def new_product(cls, product_dict):
-        """Класс-метод для создания нового продукта из словаря"""
         return cls(
             name=product_dict['name'],
             description=product_dict['description'],
@@ -39,12 +66,10 @@ class Product:
 
     @property
     def price(self):
-        """Геттер для получения цены"""
         return self.__price
 
     @price.setter
     def price(self, new_price):
-        """Сеттер для установки цены с проверкой"""
         if new_price <= 0:
             print("Цена не должна быть нулевая или отрицательная")
         else:
@@ -56,14 +81,13 @@ class Smartphone(Product):
 
     def __init__(self, name: str, description: str, price: float, quantity: int,
                  efficiency: str, model: str, memory: int, color: str):
-        # Вызываем конструктор родительского класса
         super().__init__(name, description, price, quantity)
 
         # Добавляем новые атрибуты
-        self.efficiency = efficiency  # производительность
-        self.model = model  # модель
-        self.memory = memory  # объем встроенной памяти
-        self.color = color  # цвет
+        self.efficiency = efficiency
+        self.model = model
+        self.memory = memory
+        self.color = color
 
 
 class LawnGrass(Product):
@@ -71,14 +95,12 @@ class LawnGrass(Product):
 
     def __init__(self, name: str, description: str, price: float, quantity: int,
                  country: str, germination_period: str, color: str):
-        # Вызываем конструктор родительского класса
         super().__init__(name, description, price, quantity)
 
         # Добавляем новые атрибуты
-        self.country = country  # страна-производитель
-        self.germination_period = germination_period  # срок прорастания
-        self.color = color  # цвет
-
+        self.country = country
+        self.germination_period = germination_period
+        self.color = color
 
 class Category:
     category_count = 0
@@ -117,10 +139,30 @@ class Category:
         return result
 
 
+# def main():
+#     """Основная функция программы"""
+#     # Здесь можно оставить минимальный код или вообще ничего
+#     pass
+#
+#
+# if __name__ == "__main__":
+#     main()
 def main():
     """Основная функция программы"""
-    # Здесь можно оставить минимальный код или вообще ничего
-    pass
+    print("=== Начинаем тестирование миксина ===\n")
+
+    # Создаем обычный продукт
+    product1 = Product("Телефон", "Смартфон Apple", 90000, 10)
+
+    # Создаем смартфон
+    phone = Smartphone("iPhone 14", "Смартфон Apple", 80000, 5,
+                       "высокая", "14 Pro", 256, "черный")
+
+    # Создаем газонную траву
+    grass = LawnGrass("Газон City", "Трава для газона", 2000, 20,
+                      "Россия", "10 дней", "зеленый")
+
+    print("\n=== Все продукты успешно созданы ===")
 
 
 if __name__ == "__main__":
