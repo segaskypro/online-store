@@ -38,6 +38,10 @@ class BaseProduct(ABC):
 class Product(ProductReprMixin, BaseProduct):
     def __init__(self, name: str, description: str,
                  price: float, quantity: int):
+        # Проверяем количество товара
+        if quantity == 0:
+            raise ValueError("Товар с нулевым количеством не может быть добавлен")
+
         super().__init__(name, description, price, quantity)
         self.name = name
         self.description = description
@@ -130,6 +134,17 @@ class Category:
         self.__products.append(product)  # Добавляем в приватный список
         Category.product_count += 1  # Увеличиваем счетчик товаров
 
+    def average_price(self):
+        """Подсчитывает средний ценник всех товаров в категории"""
+        try:
+            total_sum = 0
+            for product in self.__products:
+                total_sum += product.price
+            return total_sum / len(self.__products)
+        except ZeroDivisionError:
+            return 0
+
+
     @property
     def products(self):
         """Геттер для получения форматированного списка товаров"""
@@ -139,30 +154,34 @@ class Category:
         return result
 
 
-# def main():
-#     """Основная функция программы"""
-#     # Здесь можно оставить минимальный код или вообще ничего
-#     pass
-#
-#
-# if __name__ == "__main__":
-#     main()
 def main():
     """Основная функция программы"""
-    print("=== Начинаем тестирование миксина ===\n")
+    print("=== Демонстрация исключения при quantity=0 ===\n")
 
-    # Создаем обычный продукт
-    product1 = Product("Телефон", "Смартфон Apple", 90000, 10)
+    try:
+        print("Пытаемся создать товар с количеством 0...")
+        product = Product("Тест", "Описание", 100.0, 0)
+        print("Товар создался (не должно быть!)")
+    except ValueError as e:
+        print(f"Поймана ошибка: {e}")
+        print("✅ Исключение работает правильно!")
 
-    # Создаем смартфон
-    phone = Smartphone("iPhone 14", "Смартфон Apple", 80000, 5,
-                       "высокая", "14 Pro", 256, "черный")
-
-    # Создаем газонную траву
-    grass = LawnGrass("Газон City", "Трава для газона", 2000, 20,
-                      "Россия", "10 дней", "зеленый")
-
-    print("\n=== Все продукты успешно созданы ===")
+# def main():
+#     """Основная функция программы"""
+#     print("=== Начинаем тестирование миксина ===\n")
+#
+#     # Создаем обычный продукт
+#     product1 = Product("Телефон", "Смартфон Apple", 90000, 10)
+#
+#     # Создаем смартфон
+#     phone = Smartphone("iPhone 14", "Смартфон Apple", 80000, 5,
+#                        "высокая", "14 Pro", 256, "черный")
+#
+#     # Создаем газонную траву
+#     grass = LawnGrass("Газон City", "Трава для газона", 2000, 20,
+#                       "Россия", "10 дней", "зеленый")
+#
+#     print("\n=== Все продукты успешно созданы ===")
 
 
 if __name__ == "__main__":
