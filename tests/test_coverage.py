@@ -29,7 +29,7 @@ def test_category_attributes():
     assert hasattr(c, 'products')
     assert c.name == "Cat"
     assert c.description == "Desc"
-    assert len(c.products) == 1
+    assert c.products == "Test, 10.0 руб. Остаток: 1 шт.\n"
 
 
 def test_class_attributes():
@@ -51,5 +51,7 @@ def test_class_attributes():
 def test_empty_products_list():
     """Тестируем категорию с пустым списком товаров"""
     c = Category("Empty", "No products", [])
-    assert len(c.products) == 0
+    # Теперь products - это геттер, возвращающий строку
+    # Для пустой категории должна вернуться пустая строка
+    assert c.products == ""
     # Счётчик категорий должен увеличиться, товаров - нет
